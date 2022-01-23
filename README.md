@@ -1,6 +1,6 @@
 **CHESS GAME BACKEND**
 
-This is a simple personal project designed to be used with a front end.
+This is a simple personal project to practice developing a simple application seperating the back end and front end.
 
 **TODO**
 - Write more unit tests
