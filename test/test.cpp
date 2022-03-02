@@ -4,6 +4,32 @@
 #include <vector>
 #include <string>
 
+
+TEST(testChess, BoardPosition)
+{
+    chess::BoardPosition pos(5, 6);
+    EXPECT_EQ(pos.column, 5);
+    EXPECT_EQ(pos.row, 6);
+}
+
+TEST(testChess, BoardPosition_operators)
+{
+    using bp = chess::BoardPosition;
+    bp originalPos;
+    bp modifiedPos; 
+    bp expectedPos;
+
+    originalPos = {5, 6};
+    modifiedPos = originalPos + bp{1, 1};
+    expectedPos = {6, 7};
+    EXPECT_EQ(modifiedPos, expectedPos);
+
+    modifiedPos = originalPos - bp{1, 1};
+    expectedPos = {4, 5};
+    EXPECT_EQ(modifiedPos, expectedPos);
+}
+
+
 TEST(testChess, fileToColumn)
 {
     EXPECT_EQ(chess::fileToColumn('a'), 0);
@@ -134,10 +160,10 @@ TEST(testChess, encryptPosition)
 
 TEST(testChess, isNotationValid)
 {
-	chess::isNotationValid("test a long_word");
-	chess::isNotationValid("Ka1");
+	EXPECT_FALSE(chess::isNotationValid("test a long_word").size() > 0);
+	EXPECT_TRUE(chess::isNotationValid("Ka1").size() > 0);
 
-	chess::isNotationValid("e1 c6");
+	EXPECT_TRUE(chess::isNotationValid("e1 c6").size() > 0);
 
 	std::vector<std::string> kasparov_vs_the_world= {
 		"e4 c5", "Nf3 d6", "Bb5+ Bd7", "Bxd7+ Qxd7", "c4 Nc6", "Nc3 Nf6",
@@ -157,6 +183,229 @@ TEST(testChess, isNotationValid)
 		<<"No chess notation match for: \""<<move<<"\"";
 	}
 }
+
+TEST(testChess, ChessBoard)
+{
+
+    chess::ChessBoard chessBoard;
+    std::array<chess::Piece*, 64> pieceAddr;
+    for (int i=0 ; i<chessBoard.layout.size() ; i++)
+    {
+        pieceAddr[i] = &chessBoard.layout[i];
+    }
+
+    for (int row=chess::kMinRow ; row<chess::kMaxRow ; row++)
+    {
+        for (int col=chess::kMinColumn ; col<chess::kMaxColumn ; col++)
+        {
+            chess::Piece& piece = chessBoard.getAt(
+                chess::BoardPosition(col, row));
+            EXPECT_EQ(piece.type, chess::Empty);
+            EXPECT_EQ(piece.color, chess::Black);
+        }
+    }
+    
+    for(auto& p1: chessBoard.layout)
+    {
+        bool found = false;
+        for(auto p2: pieceAddr)
+        {
+            if (&p1 == p2)
+            {
+                found = true;
+            }
+        }
+        EXPECT_TRUE(found);
+    }
+    EXPECT_EQ(chessBoard.nextGo, chess::White);
+}
+
+TEST(testChess, ChessBoard_pawnDoubleSteped)
+{
+    chess::ChessBoard chessBoard;
+    auto& isValidPosition = chessBoard.pawnDoubleSteped.isValidPosition;
+    auto& getIndex = chessBoard.pawnDoubleSteped.getIndex;
+    
+    // Check for valid positions
+    for (auto& row : std::vector<int>{1, 6})
+    {
+        for (int col=chess::kMinColumn ; col<chess::kMaxColumn ; col++)
+        {
+            EXPECT_TRUE(isValidPosition({col, row}));
+            auto idx = getIndex({col, row});
+            EXPECT_TRUE(idx >= 0);
+            EXPECT_TRUE(15 >= idx);
+        }
+    }
+    // Check for invalid positions
+    for (auto& row : std::vector<int>{0, 2, 3, 4, 5, 7})
+    {
+        for (int col=chess::kMinColumn ; col<chess::kMaxColumn ; col++)
+        {
+            EXPECT_FALSE(isValidPosition({col, row}));
+        }
+    }
+}
+
+TEST(testChess, ChessBoard_rookCastleable)
+{
+    chess::ChessBoard chessBoard;
+    auto& isValidPosition = chessBoard.rookCastleable.isValidPosition;
+    auto& getIndex = chessBoard.rookCastleable.getIndex;
+
+    EXPECT_TRUE(isValidPosition({0, 0}));
+    EXPECT_EQ(getIndex({0, 0}), 0);
+    EXPECT_TRUE(isValidPosition({0, 7}));
+    EXPECT_EQ(getIndex({0, 7}), 1);
+    EXPECT_TRUE(isValidPosition({7, 0}));
+    EXPECT_EQ(getIndex({7, 0}), 2);
+    EXPECT_TRUE(isValidPosition({7, 7}));
+    EXPECT_EQ(getIndex({7, 7}), 3);
+
+    // Check for all invalid positions
+    for (auto& row : std::vector<int>{1, 2, 3, 4, 5, 6})
+    {
+        for (auto& col : std::vector<int>{0, 1, 2, 3, 4, 5, 6, 7})
+        {
+            EXPECT_FALSE(isValidPosition({col, row}));
+        }
+    }
+
+    for (auto& row : std::vector<int>{0, 1, 2, 3, 4, 5, 6, 7})
+    {
+        for (auto& col : std::vector<int>{1, 2, 3, 4, 5, 6})
+        {
+            EXPECT_FALSE(isValidPosition({col, row}));
+        }
+    }
+}
+
+TEST(testChess, populateDefaultLayout)
+{
+    chess::ChessBoard chessBoard;
+    chess::populateDefaultLayout(chessBoard);
+    /*
+    Do comparisons
+    */
+
+    EXPECT_TRUE(true);
+}
+
+
+TEST(testChess, doesMoveCollide)
+{
+    chess::ChessBoard chessBoard;
+    chess::Piece& piece = chessBoard.getAt({4, 4});
+    piece.type = chess::Pawn;
+    chess::Move move;
+
+    move.originPos = {2, 2};
+    move.targetPos = {5, 5};
+    bool collides = chess::doesMoveCollide(
+        chessBoard, move);
+    EXPECT_TRUE(collides);
+
+    move.originPos = {5, 5};
+    move.targetPos = {2, 2};
+    collides = chess::doesMoveCollide(
+        chessBoard, move);
+    EXPECT_TRUE(collides);
+
+    move.originPos = {6, 2};
+    move.targetPos = {2, 6};
+    collides = chess::doesMoveCollide(
+        chessBoard, move);
+    EXPECT_TRUE(collides);
+
+    move.originPos = {2, 4};
+    move.targetPos = {6, 4};
+    collides = chess::doesMoveCollide(
+        chessBoard, move);
+    EXPECT_TRUE(collides);
+
+    move.originPos = {4, 1};
+    move.targetPos = {4, 7};
+    collides = chess::doesMoveCollide(
+        chessBoard, move);
+    EXPECT_TRUE(collides);
+
+    move.originPos = {1, 4};
+    move.targetPos = {7, 4};
+    collides = chess::doesMoveCollide(
+        chessBoard, move);
+    EXPECT_TRUE(collides);
+}
+
+chess::ChessBoard& executeMoveSetup()
+{
+    chess::ChessBoard chessBoard;
+    chess::populateDefaultLayout(chessBoard);
+    return chessBoard;
+}
+
+
+
+namespace chess
+{
+
+TEST(testChess, executeMoveSetup)
+{
+
+    auto chessBoard = executeMoveSetup();
+
+    EXPECT_EQ(chessBoard.nextGo, White);
+
+    // Check white's back row
+    EXPECT_EQ(chessBoard.getAt({0,0}), Piece(Rook, White));
+    EXPECT_EQ(chessBoard.getAt({1,0}), Piece(Knight, White));
+    EXPECT_EQ(chessBoard.getAt({2,0}), Piece(Bishop, White));
+    EXPECT_EQ(chessBoard.getAt({3,0}), Piece(Queen, White));
+    EXPECT_EQ(chessBoard.getAt({4,0}), Piece(Knight, White));
+    EXPECT_EQ(chessBoard.getAt({5,0}), Piece(Bishop, White));
+    EXPECT_EQ(chessBoard.getAt({6,0}), Piece(Knight, White));
+    EXPECT_EQ(chessBoard.getAt({7,0}), Piece(Rook, White));
+    for(int col=0 ; col<8 ; col++)
+    {
+        // Check white's front row
+        EXPECT_EQ(chessBoard.getAt({col, 1}), Piece(Pawn, White));
+        // Check middle rows are empty
+        for(int row=2 ; row<5 ; row++)
+            EXPECT_EQ(chessBoard.getAt({col, row}), Piece(Empty, Black));
+        // Check black's front row
+        EXPECT_EQ(chessBoard.getAt({col, 6}), Piece(Pawn, Black));
+    }
+    // Check black's back row
+    EXPECT_EQ(chessBoard.getAt({0,0}), Piece(Rook, Black));
+    EXPECT_EQ(chessBoard.getAt({1,0}), Piece(Knight, Black));
+    EXPECT_EQ(chessBoard.getAt({2,0}), Piece(Bishop, Black));
+    EXPECT_EQ(chessBoard.getAt({3,0}), Piece(Queen, Black));
+    EXPECT_EQ(chessBoard.getAt({4,0}), Piece(Knight, Black));
+    EXPECT_EQ(chessBoard.getAt({5,0}), Piece(Bishop, Black));
+    EXPECT_EQ(chessBoard.getAt({6,0}), Piece(Knight, Black));
+    EXPECT_EQ(chessBoard.getAt({7,0}), Piece(Rook, Black));
+
+    for (int col=kMinColumn ; col<kMaxColumn ; col++)
+    {
+        for (int row : {1, 6})
+        {
+            auto index = chessBoard.pawnDoubleSteped.getIndex({col, row});
+        }
+    }
+}
+
+}
+
+TEST(testChess, executeMove)
+{
+    chess::ChessBoard chessBoard;
+    chess::populateDefaultLayout(chessBoard);
+
+    bool success = executeMove(
+        chessBoard, {{3, 1}, {3, 3}}
+    );
+    EXPECT_TRUE(success);
+}
+
 
 int main(int argc, char **argv)
 {
