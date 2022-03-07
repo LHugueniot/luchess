@@ -239,12 +239,28 @@ struct ChessBoard
 {
 	ChessBoard(Piece _default={Empty, Black})
 	{
-		layout.fill(_default);
+		this->layout.fill(_default);
+	}
+	ChessBoard(ChessBoard&&) = default;
+
+	bool isValidPosition(BoardPosition const& pos)
+	{
+		return (pos.column >= 0 || pos.column <= 7) &&
+			(pos.row >= 0 || pos.row <= 7);
+	}
+
+	uint getIndex(BoardPosition const& pos)
+	{
+		return pos.column + 8 * pos.row;
 	}
 
 	Piece& getAt(BoardPosition const& pos)
 	{
-		return this->layout[pos.column + 8 * pos.row];
+		if(!this->isValidPosition(pos))
+			throw std::invalid_argument(
+				"ChessBoard::getAt invalid argument: 'pos' must "
+				"satisfy ChessBoard::isValidPosition.");
+		return this->layout[getIndex(pos)];
 	}
 
 	Piece const& getAt(BoardPosition const& pos) const
@@ -267,11 +283,15 @@ struct ChessBoard
 	> pawnDoubleSteped;
 
 	SpecialMoveStatus<4,
+		// isValidPosition
 		[](BoardPosition const& pos){
 			return (pos.column == 0 || pos.column == 7) &&
 				(pos.row == 0 || pos.row == 7);
 		},
+		// getIndex
 		[](BoardPosition const& pos){
+			// Use bitwise operations to get unique
+			// index for each position combination
 			uint index = 0;
 			if (pos.row == 0)
 				index |= 0;

@@ -220,12 +220,15 @@ TEST(testChess, ChessBoard)
     EXPECT_EQ(chessBoard.nextGo, chess::White);
 }
 
-TEST(testChess, ChessBoard_pawnDoubleSteped)
+TEST(testChess, ChessBoard_pawnDoubleSteped_indexChecker)
 {
     chess::ChessBoard chessBoard;
     auto& isValidPosition = chessBoard.pawnDoubleSteped.isValidPosition;
     auto& getIndex = chessBoard.pawnDoubleSteped.getIndex;
     
+    std::array<bool, 16> duplicateCache;
+    duplicateCache.fill(false);
+
     // Check for valid positions
     for (auto& row : std::vector<int>{1, 6})
     {
@@ -235,6 +238,8 @@ TEST(testChess, ChessBoard_pawnDoubleSteped)
             auto idx = getIndex({col, row});
             EXPECT_TRUE(idx >= 0);
             EXPECT_TRUE(15 >= idx);
+            EXPECT_FALSE(duplicateCache[idx]);
+            duplicateCache[idx] = true;
         }
     }
     // Check for invalid positions
@@ -247,7 +252,7 @@ TEST(testChess, ChessBoard_pawnDoubleSteped)
     }
 }
 
-TEST(testChess, ChessBoard_rookCastleable)
+TEST(testChess, ChessBoard_rookCastleable_indexChecker)
 {
     chess::ChessBoard chessBoard;
     auto& isValidPosition = chessBoard.rookCastleable.isValidPosition;
@@ -336,7 +341,7 @@ TEST(testChess, doesMoveCollide)
     EXPECT_TRUE(collides);
 }
 
-chess::ChessBoard& executeMoveSetup()
+chess::ChessBoard executeMoveSetup()
 {
     chess::ChessBoard chessBoard;
     chess::populateDefaultLayout(chessBoard);
@@ -350,9 +355,7 @@ namespace chess
 
 TEST(testChess, executeMoveSetup)
 {
-
     auto chessBoard = executeMoveSetup();
-
     EXPECT_EQ(chessBoard.nextGo, White);
 
     // Check white's back row
@@ -360,10 +363,11 @@ TEST(testChess, executeMoveSetup)
     EXPECT_EQ(chessBoard.getAt({1,0}), Piece(Knight, White));
     EXPECT_EQ(chessBoard.getAt({2,0}), Piece(Bishop, White));
     EXPECT_EQ(chessBoard.getAt({3,0}), Piece(Queen, White));
-    EXPECT_EQ(chessBoard.getAt({4,0}), Piece(Knight, White));
+    EXPECT_EQ(chessBoard.getAt({4,0}), Piece(King, White));
     EXPECT_EQ(chessBoard.getAt({5,0}), Piece(Bishop, White));
     EXPECT_EQ(chessBoard.getAt({6,0}), Piece(Knight, White));
     EXPECT_EQ(chessBoard.getAt({7,0}), Piece(Rook, White));
+    //std::cout<<
     for(int col=0 ; col<8 ; col++)
     {
         // Check white's front row
@@ -375,35 +379,39 @@ TEST(testChess, executeMoveSetup)
         EXPECT_EQ(chessBoard.getAt({col, 6}), Piece(Pawn, Black));
     }
     // Check black's back row
-    EXPECT_EQ(chessBoard.getAt({0,0}), Piece(Rook, Black));
-    EXPECT_EQ(chessBoard.getAt({1,0}), Piece(Knight, Black));
-    EXPECT_EQ(chessBoard.getAt({2,0}), Piece(Bishop, Black));
-    EXPECT_EQ(chessBoard.getAt({3,0}), Piece(Queen, Black));
-    EXPECT_EQ(chessBoard.getAt({4,0}), Piece(Knight, Black));
-    EXPECT_EQ(chessBoard.getAt({5,0}), Piece(Bishop, Black));
-    EXPECT_EQ(chessBoard.getAt({6,0}), Piece(Knight, Black));
-    EXPECT_EQ(chessBoard.getAt({7,0}), Piece(Rook, Black));
+    EXPECT_EQ(chessBoard.getAt({0,7}), Piece(Rook, Black));
+    EXPECT_EQ(chessBoard.getAt({1,7}), Piece(Knight, Black));
+    EXPECT_EQ(chessBoard.getAt({2,7}), Piece(Bishop, Black));
+    EXPECT_EQ(chessBoard.getAt({3,7}), Piece(Queen, Black));
+    EXPECT_EQ(chessBoard.getAt({4,7}), Piece(King, Black));
+    EXPECT_EQ(chessBoard.getAt({5,7}), Piece(Bishop, Black));
+    EXPECT_EQ(chessBoard.getAt({6,7}), Piece(Knight, Black));
+    EXPECT_EQ(chessBoard.getAt({7,7}), Piece(Rook, Black));
 
     for (int col=kMinColumn ; col<kMaxColumn ; col++)
     {
         for (int row : {1, 6})
         {
-            auto index = chessBoard.pawnDoubleSteped.getIndex({col, row});
+            //auto valid = 
+            //    chessBoard.pawnDoubleSteped.isValidPosition({col, row});
+            //EXPECT_TRUE(valid);
+            //auto index = chessBoard.pawnDoubleSteped.getIndex({col, row});
         }
     }
 }
 
 }
 
-TEST(testChess, executeMove)
+TEST(testChess, executePawnMove)
 {
-    chess::ChessBoard chessBoard;
-    chess::populateDefaultLayout(chessBoard);
+    chess::ChessBoard chessBoard = executeMoveSetup();
 
+    EXPECT_EQ(chessBoard.nextGo, chess::White);
     bool success = executeMove(
-        chessBoard, {{3, 1}, {3, 3}}
+        chessBoard, {{3, 1}, {3, 2}}
     );
     EXPECT_TRUE(success);
+    EXPECT_EQ(chessBoard.nextGo, chess::Black);
 }
 
 
