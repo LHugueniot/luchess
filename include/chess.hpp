@@ -394,12 +394,6 @@ std::smatch isNotationValid(std::string const& move)
     return match;
 }
 
-bool isPositionValid(BoardPosition const& pos)
-{
-	return 0 <= pos.column && pos.column <= 8 &&
-		0 <= pos.row && pos.row <= 8;
-}
-
 bool doesMoveCollide(ChessBoard& board, Move const& move)
 {
 	auto posDiff = move.targetPos - move.originPos;
@@ -460,12 +454,12 @@ void populateDefaultLayout(ChessBoard& board)
 bool executeMove(ChessBoard& board, Move const& move)
 {
 	// Check we're on the board
-	if (!isPositionValid(move.originPos))
+	if (!board.isValidPosition(move.originPos))
 	{
 		DEBUG("Origin postion not valid");
 		return false;
 	}
-	if (!isPositionValid(move.targetPos))
+	if (!board.isValidPosition(move.targetPos))
 	{
 		DEBUG("Target postion not valid");
 		return false;

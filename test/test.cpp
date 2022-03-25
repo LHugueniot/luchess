@@ -353,7 +353,7 @@ chess::ChessBoard executeMoveSetup()
 namespace chess
 {
 
-TEST(testChess, executeMoveSetup)
+TEST(testChess, populateDefaultLayout)
 {
     auto chessBoard = executeMoveSetup();
     EXPECT_EQ(chessBoard.nextGo, White);
@@ -402,16 +402,29 @@ TEST(testChess, executeMoveSetup)
 
 }
 
-TEST(testChess, executePawnMove)
+TEST(testChess, executePawnMoves)
 {
     chess::ChessBoard chessBoard = executeMoveSetup();
 
-    EXPECT_EQ(chessBoard.nextGo, chess::White);
-    bool success = executeMove(
-        chessBoard, {{3, 1}, {3, 2}}
-    );
-    EXPECT_TRUE(success);
-    EXPECT_EQ(chessBoard.nextGo, chess::Black);
+    auto executePawnDoubleStep = [&](
+        chess::BoardPosition const& origin,
+        chess::BoardPosition const& dest,
+        chess::PieceColor expectedCurrentPiece)
+    {
+        EXPECT_EQ(chessBoard.nextGo, expectedCurrentPiece);
+        EXPECT_FALSE(chessBoard.pawnDoubleSteped.getAt(origin));
+        bool success = executeMove(
+            chessBoard, {origin, dest}
+        );
+        EXPECT_TRUE(success);
+        EXPECT_EQ(chessBoard.nextGo, !expectedCurrentPiece);
+        EXPECT_FALSE(chessBoard.pawnDoubleSteped.getAt(origin));
+    };
+    executePawnDoubleStep({6, 1}, {6, 2}, chess::White);
+    executePawnDoubleStep({6, 6}, {6, 5}, chess::Black);
+
+    executePawnDoubleStep({3, 1}, {3, 3}, chess::White);
+    executePawnDoubleStep({5, 6}, {5, 4}, chess::Black);
 }
 
 
