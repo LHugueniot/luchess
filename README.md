@@ -9,3 +9,7 @@ This is a simple personal project to practice developing a simple application se
 - Set up a real build system (CMake or Bazel?)
 - Better code commenting
 - Create docstrings
+- Reorganise codebase
+
+**Reorganise codebase**:
+
