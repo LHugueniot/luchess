@@ -350,7 +350,7 @@ chess::ChessBoard executeMoveSetup()
 
 
 
-namespace chess
+namespace luchess
 {
 
 TEST(testChess, populateDefaultLayout)
