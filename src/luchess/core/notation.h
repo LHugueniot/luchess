@@ -1,3 +1,6 @@
+#ifndef LUCHESS_CORE_NOTATION_H_
+#define LUCHESS_CORE_NOTATION_H_
+
 #include <stdexcept>
 #include <regex>
 
@@ -32,3 +35,5 @@ std::string encryptPosition(uint index);
 std::smatch isNotationValid(std::string const& move);
 
 }
+
+#endif // LUCHESS_CORE_NOTATION_H_

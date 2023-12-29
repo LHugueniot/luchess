@@ -1,2 +1,2 @@
-build/*
-.vscode/
+b_debug/*
+b_release/*

@@ -72,9 +72,9 @@ static const uint kMaxRow = 7;
 static const uint kMinColumn = 0;
 static const uint kMaxColumn = 7;
 
-constexpr static const& std::array<PieceType, >{
-	
-};
+//constexpr static const& std::array<PieceType, >{
+//	
+//};
 
 bool ChessBoard::doesLineCollide(
 	BoardPosition const& originPos,
@@ -108,9 +108,30 @@ bool ChessBoard::doesLineCollide(
 	return false;
 }
 
+std::vector<BoardPosition> ChessBoard::_positionsInRangeOfRook(BoardPosition const& originPos)
+{
+	ChessBoard& board = *this;
+
+	std::vector<BoardPosition> result ={};
+
+	for (auto targetPos: std::array<BoardPosition, 4>{
+		originPos + BoardPosition{8, 0},
+		originPos + BoardPosition{-8, 0},
+		originPos + BoardPosition{0, 8},
+		originPos + BoardPosition{0, -8},
+		}
+	)
+	{
+		BoardPosition collisionPos;
+		if (board.doesLineCollide(originPos, targetPos, collisionPos))
+		{
+			result.push_back(collisionPos);
+		}
+	}
+}
+
 bool positionsInRangeOfPos(BoardPosition const& pos, std::vector<BoardPosition>& positionsInRange)
 {
-
 }
 
 bool ChessBoard::_isSquareExposed(BoardPosition const& pos, PieceColor opponent)
@@ -139,7 +160,7 @@ bool ChessBoard::_isSquareExposed(BoardPosition const& pos, PieceColor opponent)
 			}
 		}
 	}
-	board.doesLineCollide(pos, BoardPosition(8, pos.row), collisionPos);
+	// board.doesLineCollide(pos, BoardPosition(8, pos.row), collisionPos);
 
 	for (auto& boardSquare: layout)
 	{

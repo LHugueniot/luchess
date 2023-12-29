@@ -9,9 +9,6 @@ std::ostream &operator<<(std::ostream &os, PieceType const& p) {
 	std::string_view result;
 	switch(p)
 	{
-		case Empty:
-			result = {STR(Empty)};
-			break;
 		case Pawn:
 			result = {STR(Pawn)};
 			break;

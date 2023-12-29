@@ -1,6 +1,12 @@
+#ifndef LUCHESS_CORE_PIECES_H_
+#define LUCHESS_CORE_PIECES_H_
+
+#include "luchess/core/types.h"
+
+
 namespace luchess {
 
-enum PieceType : uint8_t
+enum PieceType : uint
 {
 	Pawn=0x0,
 	Bishop=0x1,
@@ -18,12 +24,6 @@ enum PieceColor : bool
 
 struct Piece
 {
-	Piece() = default;
-
-	constexpr const Piece(const PieceType _type, const PieceColor _color) :
-	type(_type), color(_color)
-	{}
-
 	Piece(PieceType _type, PieceColor _color) :
 	type(_type), color(_color)
 	{}
@@ -35,3 +35,5 @@ struct Piece
 };
 
 }
+
+#endif // LUCHESS_CORE_PIECES_H_

@@ -1,3 +1,6 @@
+#ifndef LUCHESS_CORE_UTIL_H_
+#define LUCHESS_CORE_UTIL_H_
+
 #include <ostream>
 
 #include "luchess/core/pieces.h"
@@ -33,3 +36,5 @@ std::ostream &operator<<(std::ostream &os, PieceColor const& p);
 std::ostream &operator<<(std::ostream &os, BoardPosition const& bp);
 
 }
+
+#endif // LUCHESS_CORE_UTIL_H_

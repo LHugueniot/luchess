@@ -1,4 +1,4 @@
-#include "chess.hpp"
+#include "luchess/core/chess.h"
 #include "gtest/gtest.h"
 #include <sstream>
 #include <vector>

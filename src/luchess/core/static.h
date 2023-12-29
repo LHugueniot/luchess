@@ -1,1 +1,6 @@
+#ifndef LUCHESS_CORE_STATIC_H_
+#define LUCHESS_CORE_STATIC_H_
+
 #define EMPTY_STATE 0
+
+#endif // LUCHESS_CORE_STATIC_H_

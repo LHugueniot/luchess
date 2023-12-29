@@ -1,7 +1,12 @@
+#ifndef LUCHESS_CORE_BOARD_H_
+#define LUCHESS_CORE_BOARD_H_
+
 #include <bitset>
 #include <array>
 #include <cstddef>
 #include <optional>
+#include <vector>
+#include <stdexcept>
 
 
 #include "luchess/core/pieces.h"
@@ -37,9 +42,9 @@ namespace luchess{
 using BoardSquare = std::optional<Piece>;
 #define EMPTY_SQUARE std::nullopt
 
+
 struct BoardPosition
 {
-
 	BoardPosition operator+(BoardPosition const& other) const;
 
 	BoardPosition operator-(BoardPosition const& other) const;
@@ -156,6 +161,7 @@ struct ChessBoard
 	bool doesLineCollide(BoardPosition const& originPos, BoardPosition const& targetPos, BoardPosition& collisionPos);
 
 	bool _isSquareExposed(BoardPosition const& pos, PieceColor opponent);
+	std::vector<BoardPosition> _positionsInRangeOfRook(BoardPosition const& pos);
 
 	// State
 	PieceColor nextGo = PieceColor::White;
@@ -172,3 +178,5 @@ struct ChessBoard
 };
 
 }
+
+#endif // LUCHESS_CORE_BOARD_H_
