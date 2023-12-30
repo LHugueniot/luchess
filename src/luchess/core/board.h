@@ -158,12 +158,19 @@ struct ChessBoard
 	};
 	MoveResult executeMove(BoardMove const& move);
 
-	bool doesLineCollide(BoardPosition const& originPos, BoardPosition const& targetPos, BoardPosition& collisionPos);
+    bool _isValidBishopMove(bool targetIsTeamPiece, bool &validMove, luchess::BoardPosition &posDiff, const luchess::BoardMove &move);
 
-	bool _isSquareExposed(BoardPosition const& pos, PieceColor opponent);
-	std::vector<BoardPosition> _positionsInRangeOfRook(BoardPosition const& pos);
+    bool _isValidKnightMove(bool targetIsTeamPiece, bool &validMove, luchess::BoardPosition &posDiff, const luchess::BoardMove &move);
 
-	// State
+    bool _isValidPawnMove(const luchess::BoardMove &move, luchess::Piece &originPiece, luchess::BoardPosition &posDiff, luchess::BoardSquare &targetSquare, uint backRow);
+
+    bool doesLineCollide(BoardPosition const &originPos, BoardPosition const &targetPos);
+    bool doesLineCollide(BoardPosition const &originPos, BoardPosition const &targetPos, BoardPosition &collisionPos);
+
+    bool _isSquareExposed(BoardPosition const &pos, PieceColor opponent);
+    std::vector<BoardPosition> _positionsInRangeOfRook(BoardPosition const &pos);
+
+    // State
 	PieceColor nextGo = PieceColor::White;
 
 	PawnDoubleStepedState pawnDoubleSteped;

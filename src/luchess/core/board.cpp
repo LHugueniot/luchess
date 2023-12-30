@@ -1,6 +1,7 @@
 #include "luchess/core/board.h"
 #include <stdexcept>
 #include "util.h"
+#include "board.h"
 
 namespace luchess{
 
@@ -72,9 +73,35 @@ static const uint kMaxRow = 7;
 static const uint kMinColumn = 0;
 static const uint kMaxColumn = 7;
 
-//constexpr static const& std::array<PieceType, >{
-//	
-//};
+bool ChessBoard::doesLineCollide(
+	BoardPosition const& originPos,
+	BoardPosition const& targetPos
+)
+{
+	ChessBoard& board = *this;
+	auto posDiff = targetPos - originPos;
+	if (abs(posDiff.column) == abs(posDiff.row) ||  // Diagonal move
+		posDiff.column != 0 && posDiff.row == 0 ||  // Vertical move
+		posDiff.column == 0 && posDiff.row != 0)	// Horizontal move
+	{
+		int columnUnit = sgn(posDiff.column);
+		int rowUnit = sgn(posDiff.row);
+		BoardPosition unitMove(columnUnit, 
+							   rowUnit);
+		DEBUG("unitMove:");
+		DEBUG(unitMove);
+		for (BoardPosition colliderPos = originPos + unitMove;
+			 colliderPos != targetPos;
+			 colliderPos += unitMove)
+		{
+			if (board.getAt(colliderPos) != EMPTY_SQUARE)
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
 bool ChessBoard::doesLineCollide(
 	BoardPosition const& originPos,
@@ -236,145 +263,44 @@ ChessBoard::MoveResult ChessBoard::executeMove(BoardMove const& move)
 	uint backRow = originPiece.color == White ? kMinRow : kMaxRow;
 
 	bool validMove = false;
-	PieceType originReplacementPiece = Empty;
-	PieceColor originReplacementColor = Black;
+
+	bool isCasteling = false;
 
 	switch(originPiece.type)
 	{
 		case Pawn:
 		{
-			int direction = originPiece.color == White ? 1 : -1;
-
-			// Move 1 step in pawn direction
-			if (posDiff.column == 0 &&
-			    (posDiff.row == 1 * direction))
-			{
-				if (targetPiece.type == Empty)
-				{
-					board.pawnDoubleSteped.setAt(move.originPos, false);
-					validMove = true;
-					break;
-				}
-				validMove = false;
-				break;
-			}
-			// Try to directly take or take en passant
-			else if ((posDiff.column == -1 || 
-					  posDiff.column == 1) &&
-					 (posDiff.row == 1 * direction))
-			{
-				// Pawn takes en passant
-				if (targetPiece.type == Empty)
-				{
-					auto potentialEnPassantPawn = board.getAt(
-						move.targetPos + BoardPosition(0, direction));
-
-					 // Check en passant pawn is different colour
-					bool differentColors =
-						potentialEnPassantPawn.color != originPiece.color;
-					// Check we're on en passant row
-					bool onEnPassantRow =
-						move.targetPos.row == (backRow + 5 * direction);
-					// Check en passantable pawn has double stepped
-					bool pawnDoubleSteped = board.pawnDoubleSteped.getAt(
-						move.targetPos - BoardPosition(0, direction));
-					if (differentColors && onEnPassantRow && pawnDoubleSteped)
-					{
-						validMove = true;
-						break;
-					}
-				}
-				// Opponent piece is different colour
-				else if (targetPiece.color != 
-						 originPiece.color)	// Check target is different colour
-				{
-					validMove = true;
-					break;
-				}
-				validMove = false;
-				break;
-			}
-			// Move 2 steps in pawn direction
-			else if (posDiff.column == 0 &&
-					 (posDiff.row == 2 * direction) &&
-					 board.pawnDoubleSteped.isValidPosition(move.originPos))
-			{
-				DEBUG("	Pawn moving two tiles.");
-				// Check it's first move
-				bool onBackRow = (move.originPos.row ==
-								  (backRow + direction));
-
-				DEBUG("	On back row:");
-				DEBUG(onBackRow);
-				// Check the target space is free
-				bool targetIsEmpty = targetPiece.type == Empty;
-				DEBUG("	Target is empty:");
-				DEBUG(targetIsEmpty);
-				// Check move doesn't collide with other pieces
-				bool moveCollides = doesLineCollide(board, move);
-				DEBUG("	Does move collide:");
-				DEBUG(moveCollides);
-				if (onBackRow && targetIsEmpty && ! moveCollides)
-				{
-					DEBUG("move.originPos: ");
-					DEBUG(move.originPos);
-					board.pawnDoubleSteped.setAt(move.originPos, true);
-					validMove = true;
-					break;
-				}
-				
-				validMove = false;
-				break;
-			}
-			break;
+            validMove = _isValidPawnMove(move, originPiece, posDiff, targetSquare, backRow);
+            break;
 		}
 		case Bishop:
 		{
-			if(targetIsTeamPiece)
-			{
-				validMove = false;
-				break;
-			}
-
-			// Bishop moves diagonally
-			if (abs(posDiff.row) == abs(posDiff.column) &&
-				!doesLineCollide(board, move))
-			{
-				validMove = true;
-				break;
-			}
-			break;
-		}
+            validMove = _isValidBishopMove(targetIsTeamPiece, validMove, posDiff, move);
+            break;
+        }      
 		case Knight:
 		{
-			if(targetIsTeamPiece)
-			{
-				validMove = false;
-				break;
-			}
-
-			// Is Knight moving by 1 in one dimension and 
-			// by 2 in the other dimension
-			if (abs(posDiff.row) == 1 && abs(posDiff.column) == 2 ||
-				abs(posDiff.row) == 2 && abs(posDiff.column) == 1)
-			{
-				validMove = true;
-				break;
-			}
-			break;
+            validMove = _isValidKnightMove(targetIsTeamPiece, validMove, posDiff, move);
+            break;
 		}
 		case Rook:
 		{
 			if (bool(posDiff.row) != bool(posDiff.column) &&
-				!doesLineCollide(board, move))
+				!doesLineCollide(move.originPos, move.targetPos))
 			{
-				if (targetPiece.type == King)
+				if (targetIsTeamPiece)
 				{
-					originReplacementPiece = targetPiece.type;
-					originReplacementColor = targetPiece.color;
+					Piece& targetPiece = *targetSquare;
+					if(targetPiece.type == King)
+					{
+						isCasteling = true;
+						validMove = true;
+					}
 				}
-				validMove = true;
-				break;
+				else
+				{
+					validMove = true;
+				}
 			}
 			break;
 		}
@@ -408,7 +334,7 @@ ChessBoard::MoveResult ChessBoard::executeMove(BoardMove const& move)
 	if (validMove)
 	{
 		targetPiece = originPiece;
-		originPiece.type = originReplacementPiece;
+		originPiece.type = originReplacementSquare.value_or();
 		board.nextGo = static_cast<PieceColor>(
 			!board.nextGo);
 	}
@@ -419,4 +345,119 @@ ChessBoard::MoveResult ChessBoard::executeMove(BoardMove const& move)
 	return validMove;
 }
 
+bool ChessBoard::_isValidBishopMove(bool targetIsTeamPiece, bool &validMove, luchess::BoardPosition &posDiff, const luchess::BoardMove &move)
+{
+	if (targetSquare == EMPTY_SQUARE)
+	{
+		return true;
+	}
+    if (!targetIsTeamPiece)
+    {
+    	// Bishop moves diagonally
+    	if (abs(posDiff.row) == abs(posDiff.column) &&
+    	    !doesLineCollide(move.originPos, move.targetPos))
+    	{
+    	    return true;
+    	}
+    }
 }
+
+bool ChessBoard::_isValidKnightMove(bool targetIsTeamPiece, bool &validMove, luchess::BoardPosition &posDiff, const luchess::BoardMove &move)
+{
+	if(!targetIsTeamPiece)
+	{
+		// Is Knight moving by 1 in one dimension and 
+		// by 2 in the other dimension
+		if (abs(posDiff.row) == 1 && abs(posDiff.column) == 2 ||
+			abs(posDiff.row) == 2 && abs(posDiff.column) == 1)
+		{
+			return true;
+		}
+	}
+}
+
+bool ChessBoard::_isValidPawnMove(const luchess::BoardMove &move, luchess::Piece &originPiece, luchess::BoardPosition &posDiff, luchess::BoardSquare &targetSquare, uint backRow)
+{
+	luchess::ChessBoard &board = *this;
+
+    int direction = originPiece.color == White ? 1 : -1;
+
+    // Move 1 step in pawn direction
+    if (posDiff.column == 0 &&
+        (posDiff.row == 1 * direction))
+    {
+        if (targetSquare == EMPTY_SQUARE)
+        {
+            board.pawnDoubleSteped.setAt(move.originPos, false);
+            return true;
+        }
+    }
+    // Try to directly take or take en passant
+    else if ((posDiff.column == -1 ||
+              posDiff.column == 1) &&
+             (posDiff.row == 1 * direction))
+    {
+        // Pawn takes en passant
+        if (targetSquare == EMPTY_SQUARE)
+        {
+            BoardSquare enPassantTargetSquare = board.getAt(
+                move.targetPos - BoardPosition(0, direction));
+
+            if (enPassantTargetSquare != std::nullopt)
+            {
+                const Piece &enPassantTargetPiece = *enPassantTargetSquare;
+	
+                bool differentColors = enPassantTargetPiece.color != originPiece.color;
+                bool onEnPassantRow = (move.targetPos.row == 4 || move.targetPos.row == 5); // Rows 4 and 5
+                bool pawnDoubleSteped = board.pawnDoubleSteped.getAt(move.targetPos - BoardPosition(0, direction));
+		
+                if (differentColors && onEnPassantRow && pawnDoubleSteped)
+                {
+            		return true;
+                }
+            }
+        }
+        else
+        {
+            // Check target is different colour
+            const Piece &targetPiece = *targetSquare;
+            if (targetPiece.color != originPiece.color)
+            {
+            	return true;
+            }
+        }
+    }
+    // Move 2 steps in pawn direction
+    else if (posDiff.column == 0 &&
+             (posDiff.row == 2 * direction) &&
+             board.pawnDoubleSteped.isValidPosition(move.originPos))
+    {
+        DEBUG("	Pawn moving two tiles.");
+        // Check it's first move
+        bool onBackRow = (move.originPos.row ==
+                          (backRow + direction));
+
+        DEBUG("	On back row:");
+        DEBUG(onBackRow);
+        // Check the target space is free
+        if (targetSquare == EMPTY_SQUARE)
+        {
+            DEBUG("	Target is empty:");
+            // Check move doesn't collide with other pieces
+            BoardPosition _;
+            bool moveCollides = doesLineCollide(move.originPos, move.targetPos, _);
+            DEBUG("	Does move collide:");
+            DEBUG(moveCollides);
+            if (onBackRow && !moveCollides)
+            {
+                DEBUG("move.originPos: ");
+                DEBUG(move.originPos);
+                board.pawnDoubleSteped.setAt(move.originPos, true);
+            	return true;
+            }
+        }
+    }
+	return false;
+}
+
+} // end namespace luchess

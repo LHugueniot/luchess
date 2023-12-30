@@ -24,7 +24,7 @@ enum PieceColor : bool
 
 struct Piece
 {
-	Piece(PieceType _type, PieceColor _color) :
+	constexpr Piece(PieceType _type, PieceColor _color) :
 	type(_type), color(_color)
 	{}
 
@@ -32,6 +32,7 @@ struct Piece
 
 	PieceType type;
 	PieceColor color;
+
 };
 
 }
